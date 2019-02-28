@@ -29,7 +29,7 @@ config.epsilon_by_frame = lambda frame_idx: config.epsilon_final + (config.epsil
 
 #misc agent variables
 config.GAMMA=1
-config.LR=0.01
+config.LR=0.005
 
 #memory
 config.TARGET_NET_UPDATE_FREQ = 100
@@ -38,7 +38,7 @@ config.BATCH_SIZE = 32
 
 #Learning control variables
 config.LEARN_START = 100
-config.MAX_FRAMES=100000
+config.MAX_FRAMES = 50000
 config.n_hidden1 = 50
 config.n_hidden2 = 30
 
@@ -57,13 +57,13 @@ class DQN(nn.Module):
         #self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
 
         self.hidden1 = nn.Linear(self.num_features, self.num_hidden1)
-        #self.hidden2 = nn.Linear(self.num_hidden1, self.num_hidden2)
-        self.actions = nn.Linear(self.num_hidden1, self.num_actions)
+        self.hidden2 = nn.Linear(self.num_hidden1, self.num_hidden2)
+        self.actions = nn.Linear(self.num_hidden2, self.num_actions)
         self.init()
 
     def forward(self, x):
         x = F.relu(self.hidden1(x))
-        #x = F.relu(self.hidden2(x))
+        x = F.relu(self.hidden2(x))
         x = self.actions(x)
 
         return x
@@ -110,7 +110,7 @@ class Model(BaseAgent):
         self.declare_networks()
 
         self.target_model.load_state_dict(self.model.state_dict())
-        self.optimizer = optim.Adam(self.model.parameters(), lr=self.lr)
+        self.optimizer = optim.SGD(self.model.parameters(), lr=self.lr)
 
         # move to correct device
         self.model = self.model.to(self.device)
@@ -261,7 +261,7 @@ for frame_idx in range(1, config.MAX_FRAMES):
 
     episode_reward += reward
 
-    if done or episode_reward < -300:
+    if done or episode_reward < -3000:
         print("episode", frame_idx, episode_reward)
         observation = env.reset()
         model.save_reward(episode_reward)
