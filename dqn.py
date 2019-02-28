@@ -29,7 +29,7 @@ config.epsilon_by_frame = lambda frame_idx: config.epsilon_final + (config.epsil
 
 #misc agent variables
 config.GAMMA=1
-config.LR=0.1
+config.LR=0.01
 
 #memory
 config.TARGET_NET_UPDATE_FREQ = 100
@@ -154,7 +154,7 @@ class Model(BaseAgent):
         non_final_mask = torch.tensor(tuple(map(lambda s: s is not None, batch_next_state)), device=self.device,
                                       dtype=torch.uint8)
         try:  # sometimes all next states are false
-            non_final_next_states = torch.tensor([s for s in batch_next_state if s is not None], device=self.sdevice,
+            non_final_next_states = torch.tensor([s for s in batch_next_state if s is not None], device=self.device,
                                                  dtype=torch.float).view(shape)
             empty_next_state_values = False
         except:
@@ -178,7 +178,8 @@ class Model(BaseAgent):
             expected_q_values = batch_reward + (self.gamma * max_next_q_values)
 
         diff = (expected_q_values - current_q_values)
-        loss = self.huber(diff)
+        # loss = self.huber(diff)
+        loss = diff**2
         loss = loss.mean()
 
         return loss
@@ -260,14 +261,14 @@ for frame_idx in range(1, config.MAX_FRAMES):
 
     episode_reward += reward
 
-    if done:
+    if done or episode_reward < -300:
         print("episode", frame_idx, episode_reward)
         observation = env.reset()
         model.save_reward(episode_reward)
         episode_reward = 0
 
-    if frame_idx % 10000 == 0:
-        pass
+    #if episode_reward < -1000:
+    #    env.reset()
         #plot(frame_idx, model.rewards, model.losses, model.sigma_parameter_mag, timedelta(seconds=int(timer() - start)))
 
 #model.save_w()
